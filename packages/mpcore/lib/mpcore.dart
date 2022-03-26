@@ -40,6 +40,7 @@ part './components/ignore_pointer.dart';
 part './components/clip_r_rect.dart';
 part './components/image.dart';
 part './components/rich_text.dart';
+part './components/single_child_scroll_view.dart';
 part './components/transform.dart';
 part './components/colored_box.dart';
 part './components/list_view.dart';
@@ -51,6 +52,7 @@ part './components/action.dart';
 part './components/sliver_persistent_header.dart';
 part './components/web_dialogs.dart';
 part './components/custom_paint.dart';
+part './components/scroller.dart';
 part './channel/channel_base.dart';
 
 class MPCore {
@@ -161,7 +163,11 @@ class MPCore {
 
   void injectMethodChannelHandler() {
     ui.pluginMessageCallHandler = (method, data, callback) async {
-      _PlatformChannelIO.pluginMessageCallHandler(method, data, callback);
+      try {
+        _PlatformChannelIO.pluginMessageCallHandler(method, data, callback);
+      } catch (e) {
+        print(e);
+      }
     };
   }
 
@@ -318,7 +324,9 @@ class MPCore {
     final overlays = <MPElement>[];
     ModalRoute? activeOverlayParentRoute;
     scaffoldStates.forEach((state) {
-      if (state.mounted && ModalRoute.of(state.context)?.isCurrent == true) {
+      if (state.mounted &&
+          !state.isInInactiveTab() &&
+          ModalRoute.of(state.context)?.isCurrent == true) {
         if (state.widget is MPOverlayScaffold) {
           activeOverlayParentRoute =
               (state.widget as MPOverlayScaffold).parentRoute;

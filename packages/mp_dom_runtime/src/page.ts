@@ -53,6 +53,7 @@ export class Page {
       this.engine.router = new Router(this.engine);
     }
     const router = this.engine.app?.router ?? this.engine?.router;
+    await this.delay();
     const viewport = await this.fetchViewport();
     return router!.requestRoute(
       this.options?.route ?? "/",
@@ -62,17 +63,31 @@ export class Page {
     );
   }
 
+  async delay() {
+    return new Promise((it) => {
+      setTimeout(() => {
+        it(null);
+      }, 1000);
+    });
+  }
+
   async fetchViewport() {
+    if (__MP_TARGET_TT__) {
+      return {
+        width: MPEnv.platformScope.getSystemInfoSync().windowWidth,
+        height: MPEnv.platformScope.getSystemInfoSync().windowHeight,
+      };
+    }
     let viewport = { ...(await (this.element as any).getBoundingClientRect()) };
     if (!viewport.width || viewport.width <= 0.1) {
-      if (__MP_TARGET_WEAPP__ || __MP_TARGET_SWANAPP__) {
+      if (__MP_MINI_PROGRAM__) {
         viewport.width = MPEnv.platformScope.getSystemInfoSync().windowWidth;
       } else {
         viewport.width = window.innerWidth;
       }
     }
     if (!viewport.height || viewport.height <= 0.1) {
-      if (__MP_TARGET_WEAPP__ || __MP_TARGET_SWANAPP__) {
+      if (__MP_MINI_PROGRAM__) {
         viewport.height = MPEnv.platformScope.getSystemInfoSync().windowHeight;
       } else {
         viewport.height = window.innerHeight;
@@ -110,16 +125,14 @@ export class Page {
       if (!(scaffoldView instanceof MPScaffold)) return;
       if (this.scaffoldView !== scaffoldView) {
         if (this.scaffoldView) {
+          this.scaffoldView.attached = false;
           this.scaffoldView.htmlElement.remove();
           this.scaffoldView.removeFromSuperview();
         }
         this.scaffoldView = scaffoldView;
         if (scaffoldView instanceof MPScaffold && !scaffoldView.delegate) {
-          if (
-            __MP_TARGET_WEAPP__ ||
-            __MP_TARGET_SWANAPP__
-          ) {
-            if (__MP_TARGET_WEAPP__ || __MP_TARGET_SWANAPP__) {
+          if (__MP_MINI_PROGRAM__) {
+            if (__MP_MINI_PROGRAM__) {
               scaffoldView.setDelegate(new WXPageScaffoldDelegate(this.document, this.miniProgramPage));
               scaffoldView.setAttributes(message.scaffold.attributes);
             }
@@ -264,7 +277,7 @@ class WXPageScaffoldDelegate implements MPScaffoldDelegate {
   backgroundElementAttached = false;
 
   setPageTitle(title: string): void {
-    if (__MP_TARGET_SWANAPP__) {
+    if (__MP_TARGET_SWANAPP__ || __MP_TARGET_TT__) {
       MPEnv.platformScope.setNavigationBarTitle({ title });
       return;
     }

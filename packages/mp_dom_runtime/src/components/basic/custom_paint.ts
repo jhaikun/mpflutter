@@ -2,7 +2,7 @@ import { Engine } from "../../engine";
 import { MPEnv, PlatformType } from "../../env";
 import { ComponentView } from "../component_view";
 import { setDOMAttribute, setDOMStyle } from "../dom_utils";
-import { cssColor } from "../utils";
+import { cssColor, getFontStyleStyle, getFontWeightStyle, getBaselineStyle } from "../utils";
 
 export class MPDrawable {
   constructor(readonly engine: Engine) {}
@@ -11,7 +11,7 @@ export class MPDrawable {
   decodedDrawables: { [key: string]: HTMLImageElement } = {};
 
   async decodeDrawable(params: any) {
-    if (__MP_TARGET_WEAPP__ || __MP_TARGET_SWANAPP__) {
+    if (__MP_MINI_PROGRAM__) {
       if (!MPDrawable.offscreenCanvas) {
         MPDrawable.offscreenCanvas = MPEnv.platformScope.createOffscreenCanvas();
       }
@@ -43,6 +43,8 @@ export class MPDrawable {
             },
           })
         );
+      } else if (params.type === "dispose") {
+        delete this.decodedDrawables[params.target];
       } else {
         throw new Error("Unknown drawable type.");
       }
@@ -63,7 +65,7 @@ export class MPDrawable {
   async decodeNetworkImage(url: string, hashCode: number): Promise<{ width: number; height: number }> {
     return new Promise((res, rej) => {
       const img = (() => {
-        if (__MP_TARGET_WEAPP__ || __MP_TARGET_SWANAPP__) {
+        if (__MP_MINI_PROGRAM__) {
           return MPDrawable.offscreenCanvas.createImage();
         }
         return document.createElement("img");
@@ -82,7 +84,7 @@ export class MPDrawable {
   async decodeMemoryImage(data: string, hashCode: number): Promise<{ width: number; height: number }> {
     return new Promise((res, rej) => {
       const img = (() => {
-        if (__MP_TARGET_WEAPP__ || __MP_TARGET_SWANAPP__) {
+        if (__MP_MINI_PROGRAM__) {
           return MPDrawable.offscreenCanvas.createImage();
         }
         return document.createElement("img");
@@ -102,44 +104,60 @@ export class MPDrawable {
 export class CustomPaint extends ComponentView {
   static async didReceivedCustomPaintMessage(params: any, engine: any) {
     if (params.event === "fetchImage") {
-      const view = engine.componentFactory.cachedView[params.target] as CustomPaint;
-      if (__MP_TARGET_BROWSER__ && view instanceof CustomPaint) {
-        const data = (view.htmlElement as HTMLCanvasElement).toDataURL();
-        const base64EncodedData = data.split("base64,")[1];
-        engine.sendMessage(
-          JSON.stringify({
-            type: "custom_paint",
-            message: {
-              event: "onFetchImageResult",
-              seqId: params.seqId,
-              data: base64EncodedData,
-            },
-          })
-        );
-      } else if (__MP_TARGET_WEAPP__ && view instanceof CustomPaint) {
-        const node = await (view.htmlElement as any).$$getNodesRef();
-        node
-          .fields(
-            {
-              node: true,
-            },
-            (fields: any) => {
-              const canvas = fields.node;
-              const data = canvas.toDataURL();
-              const base64EncodedData = data.split("base64,")[1];
-              engine.sendMessage(
-                JSON.stringify({
-                  type: "custom_paint",
-                  message: {
-                    event: "onFetchImageResult",
-                    seqId: params.seqId,
-                    data: base64EncodedData,
-                  },
-                })
-              );
-            }
-          )
-          .exec();
+      this.fetchImage(params, engine);
+    } else if (params.event === "asyncPaint") {
+      this.asyncPaint(params, engine);
+    }
+  }
+
+  static async fetchImage(params: any, engine: any) {
+    const view = engine.componentFactory.cachedView[params.target] as CustomPaint;
+    if (__MP_TARGET_BROWSER__ && view instanceof CustomPaint) {
+      const data = (view.htmlElement as HTMLCanvasElement).toDataURL();
+      const base64EncodedData = data.split("base64,")[1];
+      engine.sendMessage(
+        JSON.stringify({
+          type: "custom_paint",
+          message: {
+            event: "onFetchImageResult",
+            seqId: params.seqId,
+            data: base64EncodedData,
+          },
+        })
+      );
+    } else if (__MP_TARGET_WEAPP__ && view instanceof CustomPaint) {
+      const node = await (view.htmlElement as any).$$getNodesRef();
+      node
+        .fields(
+          {
+            node: true,
+          },
+          (fields: any) => {
+            const canvas = fields.node;
+            const data = canvas.toDataURL();
+            const base64EncodedData = data.split("base64,")[1];
+            engine.sendMessage(
+              JSON.stringify({
+                type: "custom_paint",
+                message: {
+                  event: "onFetchImageResult",
+                  seqId: params.seqId,
+                  data: base64EncodedData,
+                },
+              })
+            );
+          }
+        )
+        .exec();
+    }
+  }
+
+  static async asyncPaint(params: any, engine: any) {
+    const view = engine.componentFactory.cachedView[params.target] as CustomPaint;
+    if (view instanceof CustomPaint) {
+      const ctx = await view.createContext();
+      if (params.commands) {
+        view.drawWithCommands(params.commands, ctx);
       }
     }
   }
@@ -150,7 +168,7 @@ export class CustomPaint extends ComponentView {
 
   constructor(readonly document: any) {
     super(document);
-    if (__MP_TARGET_WEAPP__ || __MP_TARGET_SWANAPP__) {
+    if (__MP_MINI_PROGRAM__) {
       this.htmlElement.setAttribute("type", "2d");
     }
   }
@@ -175,14 +193,17 @@ export class CustomPaint extends ComponentView {
       if (this.canvasWidth !== w || this.canvasHeight != h) {
         this.canvasWidth = w;
         this.canvasHeight = h;
-        setDOMAttribute(this.htmlElement, "width", this.canvasWidth.toString());
-        setDOMAttribute(this.htmlElement, "height", this.canvasHeight.toString());
+        if (__MP_TARGET_BROWSER__) {
+          setDOMAttribute(this.htmlElement, "width", (this.canvasWidth * window.devicePixelRatio).toString());
+          setDOMAttribute(this.htmlElement, "height", (this.canvasHeight * window.devicePixelRatio).toString());
+          (this.htmlElement as HTMLCanvasElement).getContext("2d")?.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
       }
     }
   }
 
   async createContext(): Promise<CanvasRenderingContext2D | null> {
-    if (__MP_TARGET_WEAPP__ || __MP_TARGET_SWANAPP__) {
+    if (__MP_MINI_PROGRAM__) {
       return new Promise((res) => {
         setTimeout(async () => {
           (await (this.htmlElement as any).$$getNodesRef())
@@ -209,15 +230,9 @@ export class CustomPaint extends ComponentView {
     }
   }
 
-  async setAttributes(attributes: any) {
-    super.setAttributes(attributes);
-    const ctx = this.ctx ?? (await this.createContext());
-    if (!ctx) return;
-    if (!this.ctx) {
-      this.ctx = ctx;
-    }
+  drawWithCommands(commands: any[], ctx: any) {
     ctx.save();
-    (attributes.commands as any[]).forEach((cmd) => {
+    commands.forEach((cmd) => {
       if (cmd.action === "drawRect") {
         this.drawRect(ctx, cmd);
       } else if (cmd.action === "drawPath") {
@@ -232,6 +247,8 @@ export class CustomPaint extends ComponentView {
         this.drawImage(ctx, cmd);
       } else if (cmd.action === "drawImageRect") {
         this.drawImageRect(ctx, cmd);
+      } else if (cmd.action === "drawText") {
+        this.drawText(ctx, cmd);
       } else if (cmd.action === "restore") {
         ctx.restore();
       } else if (cmd.action === "rotate") {
@@ -249,6 +266,18 @@ export class CustomPaint extends ComponentView {
       }
     });
     ctx.restore();
+  }
+
+  async setAttributes(attributes: any) {
+    super.setAttributes(attributes);
+    const ctx = this.ctx ?? (await this.createContext());
+    if (!ctx) return;
+    if (!this.ctx) {
+      this.ctx = ctx;
+    }
+    if (attributes.commands) {
+      this.drawWithCommands(attributes.commands, ctx);
+    }
   }
 
   drawRect(ctx: CanvasRenderingContext2D, params: any) {
@@ -356,6 +385,33 @@ export class CustomPaint extends ComponentView {
         params.dstH
       );
     }
+  }
+
+  drawText(ctx: CanvasRenderingContext2D, params: any) {
+    const text = params.text;
+    const style = params.style;
+    const offset = params.offset;
+    this.setTextStyle(ctx, style);
+    this.setPaint(ctx, params.paint);
+    if (params.paint.style === "PaintingStyle.fill") {
+      ctx.fillText(text, offset.x, offset.y);
+    } else {
+      ctx.strokeText(text, offset.x, offset.y);
+    }
+  }
+
+  setTextStyle(ctx: CanvasRenderingContext2D, style: any) {
+    let font = `${(style.fontSize ?? 14).toString()}px ${style.fontFamily ?? "system-ui"}`;
+    let fontWeight = getFontWeightStyle(style);
+    if (fontWeight) {
+      font = fontWeight + " " + font;
+    }
+    let fontStyle = getFontStyleStyle(style);
+    if (fontStyle) {
+      font = fontStyle + " " + font;
+    }
+    ctx.font = font;
+    ctx.textBaseline = getBaselineStyle(style) ?? "middle";
   }
 
   setPaint(ctx: CanvasRenderingContext2D, paint: any) {

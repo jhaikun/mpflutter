@@ -1,5 +1,6 @@
 declare var require: any;
 declare var wx: any;
+declare var tt: any;
 declare var swan: any;
 
 import { BrowserApp } from "./browser_app";
@@ -18,6 +19,7 @@ import { Router } from "./router";
 import { TextMeasurer } from "./text_measurer";
 import { WindowInfo } from "./window_info";
 import { wrapDartObject } from "./components/dart_object";
+import { CollectionView } from "./components/basic/collection_view";
 
 export class Engine {
   private started: boolean = false;
@@ -50,7 +52,7 @@ export class Engine {
           const ctx = await (target.htmlElement as any).$$getContext();
           return ctx;
         }
-      }
+      };
     }
   }
 
@@ -98,8 +100,14 @@ export class Engine {
       MPEnv.platformGlobal().engineScope = this.mpJS.engineScope;
     } else {
       MPEnv.platformGlobal().JSON = JSON;
-      MPEnv.platformGlobal().setTimeout = setTimeout;
-      MPEnv.platformGlobal().setInterval = setInterval;
+      MPEnv.platformGlobal().setTimeout = function (a: any, b: any) {
+        var ret = setTimeout(a, b);
+        return parseInt(ret as any);
+      };
+      MPEnv.platformGlobal().setInterval = function (a: any, b: any) {
+        var ret = setInterval(a, b);
+        return parseInt(ret as any);
+      };
       MPEnv.platformGlobal().clearTimeout = function (v: any) {
         clearTimeout(v);
       };
@@ -115,6 +123,10 @@ export class Engine {
       if (typeof swan !== "undefined") {
         MPEnv.platformGlobal().swan = swan;
         MPEnv.platformGlobal().uni = swan;
+      }
+      if (typeof tt !== "undefined") {
+        MPEnv.platformGlobal().tt = tt;
+        MPEnv.platformGlobal().uni = tt;
       }
     }
     if (this.debugger) {
@@ -188,8 +200,12 @@ export class Engine {
       WebDialogs.receivedWebDialogsMessage(this, decodedMessage.message);
     } else if (decodedMessage.type === "scaffold") {
       this.didReceivedScaffold(decodedMessage.message);
+    } else if (decodedMessage.type === "scroll_view") {
+      this.didReceivedScrollView(decodedMessage.message);
     } else if (decodedMessage.type === "rich_text" && decodedMessage.message?.event === "doMeasure") {
       TextMeasurer.didReceivedDoMeasureData(this, decodedMessage.message);
+    } else if (decodedMessage.type === "rich_text" && decodedMessage.message?.event === "doMeasureTextPainter") {
+      TextMeasurer.didReceivedDoMeasureTextPainter(this, decodedMessage.message);
     } else if (decodedMessage.type === "platform_view") {
       this.didReceivedPlatformView(decodedMessage.message);
     } else if (decodedMessage.type === "platform_channel") {
@@ -240,6 +256,16 @@ export class Engine {
       if (target) {
         target.onWechatMiniProgramShareAppMessageResolver?.(message.params);
         target.onWechatMiniProgramShareAppMessageResolver = undefined;
+      }
+    }
+  }
+
+  didReceivedScrollView(message: any) {
+    if (message.event === "onRefreshEnd") {
+      let target = this.componentFactory.cachedView[message.target] as CollectionView;
+      if (target) {
+        target.refreshEndResolver?.(undefined);
+        target.refreshEndResolver = undefined;
       }
     }
   }

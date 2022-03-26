@@ -18,6 +18,9 @@ export class CollectionView extends ComponentView {
   bottomBarWithSafeArea = false;
   layout!: CollectionViewLayout;
   didAddScrollListener = false;
+  didAddRefreshListener = false;
+  didAddScrollToLowerListener = false;
+  refreshEndResolver?: (_: any) => void;
 
   constructor(document: Document, readonly initialAttributes?: any) {
     super(document, initialAttributes);
@@ -26,12 +29,11 @@ export class CollectionView extends ComponentView {
 
   elementType() {
     if (
-      (this.initialAttributes?.restorationId || this.initialAttributes?.onScroll) &&
-      (__MP_TARGET_WEAPP__ || __MP_TARGET_SWANAPP__)
+      (this.initialAttributes?.restorationId ||
+        this.initialAttributes?.onScroll ||
+        this.initialAttributes?.onRefresh) &&
+      __MP_MINI_PROGRAM__
     ) {
-      if (this.initialAttributes?.isRoot) {
-        return "div";
-      }
       return "wx-scroll-view";
     } else {
       return "div";
@@ -84,11 +86,15 @@ export class CollectionView extends ComponentView {
           message: {
             event: "onScroll",
             target: this.attributes.onScroll,
+            isRoot: this.attributes.isRoot,
             scrollLeft: this.htmlElement.scrollLeft,
             scrollTop: this.htmlElement.scrollTop,
           },
         })
       );
+    }
+    if (this.htmlElement.scrollTop + this.htmlElement.clientHeight >= this.htmlElement.scrollHeight) {
+      this.onScrollToLowerEvent();
     }
   }
 
@@ -96,6 +102,50 @@ export class CollectionView extends ComponentView {
     if (this.didAddScrollListener) return;
     this.didAddScrollListener = true;
     this.htmlElement.addEventListener("scroll", this.onScrollEvent.bind(this));
+  }
+
+  async onRefreshEvent() {
+    await (() => {
+      return new Promise((res) => {
+        this.refreshEndResolver = res;
+        this.engine.sendMessage(
+          JSON.stringify({
+            type: "scroll_view",
+            message: {
+              event: "onRefresh",
+              target: this.hashCode,
+              isRoot: this.attributes.isRoot,
+            },
+          })
+        );
+      });
+    })();
+    this.htmlElement.setAttribute("refresher-triggered", "false");
+  }
+
+  addRefreshListener() {
+    if (this.didAddRefreshListener) return;
+    this.didAddRefreshListener = true;
+    this.htmlElement.addEventListener("refresherrefresh", this.onRefreshEvent.bind(this));
+  }
+
+  onScrollToLowerEvent() {
+    this.engine.sendMessage(
+      JSON.stringify({
+        type: "scroll_view",
+        message: {
+          event: "onScrollToLower",
+          target: this.hashCode,
+          isRoot: this.attributes.isRoot,
+        },
+      })
+    );
+  }
+
+  addScrollToLowerListener() {
+    if (this.didAddScrollToLowerListener) return;
+    this.didAddScrollToLowerListener = true;
+    this.htmlElement.addEventListener("scrolltolower", this.onScrollToLowerEvent.bind(this));
   }
 
   didMoveToWindow() {
@@ -170,15 +220,23 @@ export class CollectionView extends ComponentView {
       left: "0px",
       width: contentSize.width + "px",
       height: this.bottomBarWithSafeArea
-        ? `calc(${contentSize.height + this.bottomBarHeight}px + env(safe-area-inset-bottom))`
-        : contentSize.height + this.bottomBarHeight + "px",
+        ? `calc(${
+            contentSize.height + (this.elementType() === "div" ? this.bottomBarHeight : 0)
+          }px + env(safe-area-inset-bottom))`
+        : contentSize.height + (this.elementType() === "div" ? this.bottomBarHeight : 0) + "px",
     });
   }
 
   setAttributes(attributes: any) {
     super.setAttributes(attributes);
+    let overflow = "scroll";
+    if (attributes.scrollDisabled) {
+      overflow = "hidden";
+    } else if (attributes.isRoot) {
+      overflow = "unset";
+    }
     setDOMStyle(this.htmlElement, {
-      overflow: attributes.isRoot ? "unset" : "scroll",
+      overflow,
     });
     this.bottomBarHeight = attributes.bottomBarHeight ?? 0.0;
     this.bottomBarWithSafeArea = attributes.bottomBarWithSafeArea ?? false;
@@ -189,7 +247,7 @@ export class CollectionView extends ComponentView {
     }
     this.htmlElement.setAttribute("scroll-x", "true");
     this.htmlElement.setAttribute("scroll-y", "true");
-    if (attributes.isRoot) {
+    if (attributes.isRoot && this.elementType() === "div") {
       let window = MPEnv.platformWindow(this.document);
       if (window) {
         window.mpCurrentScrollView = this;
@@ -197,6 +255,9 @@ export class CollectionView extends ComponentView {
       this.addWindowScrollListener();
     } else {
       this.addScrollListener();
+      this.addRefreshListener();
+      this.addScrollToLowerListener();
+      this.htmlElement.setAttribute("refresher-enabled", attributes["onRefresh"] ? "true" : "false");
     }
   }
 

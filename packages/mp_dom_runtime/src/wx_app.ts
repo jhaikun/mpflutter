@@ -1,6 +1,9 @@
 declare var getCurrentPages: any;
 declare var require: any;
+declare var tt: any;
 
+import { PluginRegister } from "./platform_channel/plugin_register";
+import { MPMethodChannel } from "./platform_channel/mp_method_channel";
 import { Engine } from "./engine";
 import { MPEnv } from "./env";
 import { Page } from "./page";
@@ -9,7 +12,7 @@ import { TextMeasurer } from "./text_measurer";
 
 let usingComponentsConfig = {};
 try {
-  const indexJSON = require('mp-custom-components');
+  const indexJSON = require("mp-custom-components");
   if (indexJSON.usingComponents) {
     usingComponentsConfig = indexJSON.usingComponents;
   }
@@ -52,7 +55,7 @@ export const WXPage = function (
   selector: string = "#vdom",
   app: WXApp = MPEnv.platformGlobal().app
 ) {
-  if (!(__MP_TARGET_WEAPP__ || __MP_TARGET_SWANAPP__)) return;
+  if (!(__MP_MINI_PROGRAM__)) return;
   return {
     data: {
       pageMeta: {
@@ -68,6 +71,7 @@ export const WXPage = function (
       const window = mpRes.window;
       this.kboneDocument = mpRes.document;
       this.kboneDocument.window = window;
+      
       window.$$createSelectorQuery = () => MPEnv.platformScope.createSelectorQuery().in(this);
       window.$$createIntersectionObserver = (options: any) =>
         MPEnv.platformScope.createIntersectionObserver(this, options);
@@ -95,7 +99,7 @@ export const WXPage = function (
           finalOptions = { route: pageOptions.route, params: params };
         } else {
           finalOptions = {
-            route: (this as any).route.replace(basePath, ""),
+            route: (this as any).route?.replace(basePath, "") ?? "/",
             params: params,
           };
           if (finalOptions.route === "/index") {
@@ -244,3 +248,27 @@ class WXRouter extends Router {
     }
   }
 }
+
+class FlutterPlatformChannel extends MPMethodChannel {
+  async onMethodCall(method: string, params: any) {
+    if (method === "Clipboard.setData") {
+      MPEnv.platformScope.setClipboardData({ data: params.text });
+      return null;
+    } else if (method === "Clipboard.getData") {
+      return new Promise((res, rej) => {
+        MPEnv.platformScope.getClipboardData({
+          success: (result: any) => {
+            res({ text: result.data });
+          },
+          fail: (e: any) => {
+            rej(e);
+          },
+        });
+      });
+    } else {
+      throw "NOTIMPLEMENTED";
+    }
+  }
+}
+
+PluginRegister.registerChannel("flutter/platform", FlutterPlatformChannel);

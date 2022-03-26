@@ -33,6 +33,9 @@ export class DecoratedBox extends ComponentView {
                 return `assets/${attributes.image.assetName}`;
               }
             })();
+            if (__MP_MINI_PROGRAM__) {
+              assetUrl = "/" + assetUrl;
+            }
             return assetUrl;
           }
         }

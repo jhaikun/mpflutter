@@ -38,6 +38,7 @@
 #import "MPIOSMPDatePicker.h"
 #import "MPIOSMPSlider.h"
 #import "MPIOSMPSwitch.h"
+#import "MPIOSMPCircularProgressIndicator.h"
 
 NSDictionary *components;
 NSDictionary *ancestors;
@@ -55,6 +56,10 @@ NSDictionary *ancestors;
 @implementation MPIOSComponentFactory
 
 + (void)load {
+    [self initializeComponentsIfNeed];
+}
+
++ (void)initializeComponentsIfNeed {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         components = @{
@@ -87,12 +92,20 @@ NSDictionary *ancestors;
             @"mp_date_picker": [MPIOSMPDatePicker class],
             @"mp_slider": [MPIOSMPSlider class],
             @"mp_switch": [MPIOSMPSwitch class],
+            @"mp_circular_progress_indicator": [MPIOSMPCircularProgressIndicator class],
         };
         ancestors = @{
             @"opacity": [MPIOSOpacityAncestor class],
             @"clip_r_rect": [MPIOSClipRRectAncestor class],
         };
     });
+}
+
++ (void)registerPlatformView:(NSString *)name clazz:(Class)clazz {
+    [self initializeComponentsIfNeed];
+    NSMutableDictionary *c = [components mutableCopy];
+    [c setObject:clazz forKey:name];
+    components = [c copy];
 }
 
 - (instancetype)init
@@ -130,6 +143,7 @@ NSDictionary *ancestors;
 
 - (void)clear {
     [self.cachedView removeAllObjects];
+    [self.cachedElement removeAllObjects];
 }
 
 - (MPIOSComponentView *)create:(NSDictionary *)data {

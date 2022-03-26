@@ -1,6 +1,18 @@
 part of dart.ui;
 
 bool waitingForAnimation = false;
+Map<String, bool> disabledChannels = {
+  'flutter/navigation': true,
+  'flutter/textinput': true,
+  'flutter/keyevent': true,
+  'flutter/lifecycle': true,
+  'flutter/system': true,
+  'flutter/platform_views': true,
+  'flutter/skia': true,
+  'flutter/mousecursor': true,
+  'flutter/restoration': true,
+  'flutter/assets': true,
+};
 
 Future<void> Function(String, ByteData?, PlatformMessageResponseCallback?)?
     pluginMessageCallHandler;
@@ -139,7 +151,7 @@ class MockWindow extends Window {
     ByteData? data,
     PlatformMessageResponseCallback? callback,
   ) {
-    if (name.startsWith('flutter/')) {
+    if (disabledChannels[name] == true) {
       return;
     }
     if (pluginMessageCallHandler != null) {

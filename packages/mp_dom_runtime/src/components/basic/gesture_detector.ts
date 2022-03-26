@@ -31,17 +31,6 @@ export class GestureDetector extends ComponentView {
     return "div";
   }
 
-  setChildren(children: any) {
-    super.setChildren(children);
-    this.subviews.forEach((it) => {
-      it.gestureViewConstraints = {
-        x: this.constraints?.x ?? 0.0,
-        y: this.constraints?.y ?? 0.0,
-      };
-      it.updateLayout();
-    });
-  }
-
   setAttributes(attributes: any) {
     super.setAttributes(attributes);
     if (attributes.onTap) {
@@ -128,8 +117,8 @@ export class GestureDetector extends ComponentView {
   }
 
   async _onTouchStart(e: TouchEvent) {
-    if (__MP_TARGET_WEAPP__ && (e.target as any)?.tagName === 'CANVAS') return;
-    const getBoundingClientRect = __MP_TARGET_WEAPP__ ? await this.htmlElement.getBoundingClientRect() : this.htmlElement.getBoundingClientRect();
+    if (__MP_MINI_PROGRAM__ && (e.target as any)?.tagName === 'CANVAS') return;
+    const getBoundingClientRect = __MP_MINI_PROGRAM__ ? await this.htmlElement.getBoundingClientRect() : this.htmlElement.getBoundingClientRect();
     this.targetOriginInPage = { x: getBoundingClientRect.left, y: getBoundingClientRect.top };
     let isPan = this.attributes.onPanStart || this.attributes.onPanUpdate || this.attributes.onPanEnd;
     if (
@@ -182,7 +171,7 @@ export class GestureDetector extends ComponentView {
   }
 
   _onTouchMove(e: TouchEvent) {
-    if (__MP_TARGET_WEAPP__ && (e.target as any)?.tagName === 'CANVAS') return;
+    if (__MP_MINI_PROGRAM__ && (e.target as any)?.tagName === 'CANVAS') return;
     if (this.longPressing && (this.attributes.onLongPressMoveUpdate || this.attributes.onPanUpdate)) {
       this.engine.sendMessage(
         JSON.stringify({
@@ -210,7 +199,7 @@ export class GestureDetector extends ComponentView {
   }
 
   _onTouchEnd(e: TouchEvent) {
-    if (__MP_TARGET_WEAPP__ && (e.target as any)?.tagName === 'CANVAS') return;
+    if (__MP_MINI_PROGRAM__ && (e.target as any)?.tagName === 'CANVAS') return;
     if (this.longPressing && (this.attributes.onLongPressEnd || this.attributes.onPanEnd)) {
       this.engine.sendMessage(
         JSON.stringify({

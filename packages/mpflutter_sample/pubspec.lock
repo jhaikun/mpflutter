@@ -150,7 +150,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: eeeadc736852ceac8a6bb11443c73244cd17aff2
+      resolved-ref: "0aee2d41ae487e38761fb4a22bfa4cb4f7f19d1c"
       url: "https://github.com/mpflutter/mpflutter_plugin_template"
     source: git
     version: "0.0.1"
@@ -183,7 +183,7 @@ packages:
       name: source_span
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "1.8.1"
+    version: "1.8.2"
   string_scanner:
     dependency: transitive
     description:
@@ -248,6 +248,6 @@ packages:
       name: win32
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "2.3.3"
+    version: "2.3.6"
 sdks:
   dart: ">=2.14.0 <3.0.0"

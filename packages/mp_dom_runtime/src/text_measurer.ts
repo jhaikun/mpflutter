@@ -1,8 +1,8 @@
+import { RichText } from "./components/basic/rich_text";
 import { ComponentFactory } from "./components/component_factory";
 import { ComponentView } from "./components/component_view";
 import { setDOMStyle } from "./components/dom_utils";
 import { Engine } from "./engine";
-import { MPEnv, PlatformType } from "./env";
 import { Router } from "./router";
 
 export class TextMeasurer {
@@ -44,11 +44,52 @@ export class TextMeasurer {
     }
   }
 
+  static async didReceivedDoMeasureTextPainter(engine: Engine, data: { [key: string]: any }) {
+    if (!this.activeTextMeasureDocument) {
+      this.activeTextMeasureDocument = document;
+    }
+    while (Router.beingPush) {
+      await this.delay();
+    }
+    while (!this.activeTextMeasureDocument) {
+      await this.delay();
+    }
+    const view = new RichText(this.activeTextMeasureDocument, {});
+    view.setAttributes({ maxWidth: data.maxWidth });
+    view.setSingleTextSpan([data.text]);
+    setDOMStyle(view.htmlElement, {
+      position: "fixed",
+      top: "0px",
+      left: "0px",
+      opacity: "0",
+      width: "unset",
+      maxWidth:
+        view.attributes?.maxWidth && view.attributes?.maxWidth !== "Infinity"
+          ? view.attributes?.maxWidth + "px"
+          : "999999px",
+      height: "unset",
+      maxHeight:
+        view.attributes?.maxHeight && view.attributes?.maxHeight !== "Infinity"
+          ? view.attributes?.maxHeight + "px"
+          : "999999px",
+    });
+    this.activeTextMeasureDocument.body.appendChild(view.htmlElement);
+    if (__MP_MINI_PROGRAM__) {
+      await this.delay();
+    }
+    const rect = await (view.htmlElement as any).getBoundingClientRect();
+    view.htmlElement.remove();
+    engine.componentFactory.callbackTextPainterMeasureResult(data.seqId, rect);
+  }
+
   static async didReceivedDoMeasureData(engine: Engine, data: { [key: string]: any }) {
     if (!this.activeTextMeasureDocument) {
       this.activeTextMeasureDocument = document;
     }
     while (Router.beingPush) {
+      await this.delay();
+    }
+    while (!this.activeTextMeasureDocument) {
       await this.delay();
     }
     if (data.items) {
@@ -84,7 +125,7 @@ export class TextMeasurer {
                 : "999999px",
           });
           this.activeTextMeasureDocument.body.appendChild(it.htmlElement);
-          if (!isTiny && (__MP_TARGET_WEAPP__ || __MP_TARGET_SWANAPP__)) {
+          if (__MP_MINI_PROGRAM__) {
             await this.delay();
           }
           const rect = await (it.htmlElement as any).getBoundingClientRect();

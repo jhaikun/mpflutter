@@ -10,6 +10,7 @@ import 'package:mpflutter_template/contents/text_page.dart';
 import 'package:mpflutter_template/contents/video_view_page.dart';
 import 'package:mpflutter_template/contents/web_view_page.dart';
 import 'package:mpflutter_template/customs/custom_paint_page.dart';
+import 'package:mpflutter_template/exts/clip_board_page.dart';
 import 'package:mpflutter_template/exts/http_network_page.dart';
 import 'package:mpflutter_template/exts/plugin_page.dart';
 import 'package:mpflutter_template/exts/shared_preference_page.dart';
@@ -45,12 +46,72 @@ import 'package:mpflutter_template/touches/ignore_pointer_page.dart';
 import 'package:mpflutter_template/touches/signature_page.dart';
 
 import 'animations/animation_performance_test_page.dart';
+import 'customs/custom_paint_async_page.dart';
 import 'home.dart';
+import 'layouts/table_page.dart';
 import 'pages/main_tab_view_page.dart';
+import 'pages/route_test_page.dart';
 
 void main() {
   runApp(MyApp());
   MPCore().connectToHostChannel();
+}
+
+class SimpleD extends SliverPersistentHeaderDelegate {
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      height: 44,
+      color: Colors.blue,
+    );
+  }
+
+  @override
+  double get maxExtent => 44;
+
+  @override
+  double get minExtent => 44;
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return true;
+  }
+}
+
+class SimplePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MPScaffold(
+      backgroundColor: Colors.yellow,
+      body: Center(
+        child: RichText(
+          text: TextSpan(children: [
+            TextSpan(
+              text: 'Hello, World!',
+              style: TextStyle(
+                fontSize: 24,
+                color: Colors.blue,
+                fontWeight: FontWeight.w900,
+                fontStyle: FontStyle.italic,
+                letterSpacing: 5,
+                wordSpacing: 10,
+                backgroundColor: Colors.white,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+            TextSpan(
+              text: '!!!',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.red,
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -60,6 +121,7 @@ class MyApp extends StatelessWidget {
       title: 'MPFlutter Demo',
       theme: ThemeData(primaryColor: Colors.blue),
       routes: {
+        // '/': (context) => SimplePage(),
         '/': (context) => MyHomePage(),
         '/container': (context) => ContainerPage(),
         '/padding': (context) => PaddingPage(),
@@ -69,6 +131,7 @@ class MyApp extends StatelessWidget {
         '/stack': (context) => StackPage(),
         '/transform': (context) => TransformPage(),
         '/wrap': (context) => WrapPage(),
+        '/table': (context) => TablePage(),
         '/customScrollView': (context) => CustomScrollViewPage(),
         '/gridView': (context) => GridViewPage(),
         '/gridViewWaterfall': (context) => GridViewWaterfallPage(),
@@ -108,9 +171,12 @@ class MyApp extends StatelessWidget {
         '/plugin': (context) => PluginPage(),
         '/miniprogramApi': (context) => MiniProgramApiPage(),
         '/customPaint': (context) => CustomPaintPage(),
+        '/customPaintAsync': (context) => CustomPaintAsyncPage(),
         '/forms': (context) => FormsPage(),
         '/signature': (context) => SignaturePage(),
         '/mapView': (context) => MapViewPage(),
+        '/clipBoard': (context) => ClipBoardPage(),
+        '/routeTest': (context) => RouteTestPage(),
       },
       navigatorObservers: [MPCore.getNavigationObserver()],
     );

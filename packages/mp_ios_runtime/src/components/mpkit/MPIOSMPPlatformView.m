@@ -8,6 +8,7 @@
 
 #import "MPIOSMPPlatformView.h"
 #import "MPIOSEngine.h"
+#import "MPIOSComponentFactory.h"
 
 @implementation MPIOSMPPlatformView
 
@@ -57,23 +58,13 @@ static NSMutableDictionary<NSString *, MPIOSPlatformViewCallback> *invokeMethodC
     }
 }
 
-- (void)setChildren:(NSArray *)children {
-    [super setChildren:children];
-    [self.subviews enumerateObjectsUsingBlock:^(__kindof UIView * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        if ([obj isKindOfClass:[MPIOSComponentView class]]) {
-            [(MPIOSComponentView *)obj setPlatformViewConstraints:CGPointMake([self.constraints[@"x"] floatValue],
-                                                                              [self.constraints[@"y"] floatValue])];
-        }
-    }];
-}
-
 - (void)onMethodCall:(NSString *)method
-              params:(id)params
+              params:(NSDictionary *)params
       resultCallback:(MPIOSPlatformViewCallback)resultCallback {
     
 }
 
-- (void)invokeMethod:(NSString *)method params:(id)params {
+- (void)invokeMethod:(NSString *)method params:(NSDictionary *)params {
     if (self.hashCode == nil || method == nil) {
         return;
     }
@@ -94,7 +85,7 @@ static NSMutableDictionary<NSString *, MPIOSPlatformViewCallback> *invokeMethodC
 }
 
 - (void)invokeMethod:(NSString *)method
-              params:(id)params
+              params:(NSDictionary *)params
       resultCallback:(MPIOSPlatformViewCallback)resultCallback {
     if (resultCallback == nil) {
         [self invokeMethod:method params:params];

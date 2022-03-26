@@ -282,6 +282,8 @@ class MPChannelBase {
         }
       } else if (message['event'] == 'onMeasured') {
         _onMeasuredText(message['data']);
+      } else if (message['event'] == 'onTextPainterMeasured') {
+        MPTextPainter.onTextPainterMeasuredText(message['data']);
       }
     } catch (e) {
       print(e);
@@ -340,8 +342,27 @@ class MPChannelBase {
           (scaffoldState) =>
               scaffoldState.context.hashCode == message['target'],
         );
-        final result =
+        dynamic result =
             await target.widget.onWechatMiniProgramShareAppMessage?.call();
+        result ??= {
+          'title': target.widget.name,
+          'path':
+              '/pages/index/index?route=${(ModalRoute.of(target.context)?.settings.name ?? '/')}&${(() {
+            final params = ModalRoute.of(target.context)?.settings.arguments;
+            if (params is Map) {
+              return params
+                  .map((key, value) {
+                    return MapEntry(
+                      key,
+                      '$key=${Uri.encodeQueryComponent(value)}',
+                    );
+                  })
+                  .values
+                  .join('&');
+            }
+            return '';
+          })()}',
+        };
         MPChannel.postMessage(json.encode({
           'type': 'scaffold',
           'message': {
@@ -539,6 +560,57 @@ class MPChannelBase {
               axisDirection: AxisDirection.down,
             ),
           ).dispatch(element);
+          if (message['isRoot'] == true) {
+            element
+                .findAncestorWidgetOfExactType<MPScaffold>()
+                ?.onPageScroll
+                ?.call((message['scrollTop'] as num).toDouble());
+          }
+        }
+      } else if (message['event'] == 'onRefresh') {
+        final element = MPCore.findTargetHashCode(message['target']);
+        if (element != null) {
+          final refreshIndicator =
+              element.findAncestorWidgetOfExactType<MPRefreshIndicator>();
+          if (refreshIndicator != null) {
+            await refreshIndicator.onRefresh?.call(element.widget.key);
+            MPChannel.postMessage(json.encode({
+              'type': 'scroll_view',
+              'message': {
+                'event': 'onRefreshEnd',
+                'target': message['target'],
+              },
+            }));
+          } else {
+            if (message['isRoot'] == true) {
+              await element
+                  .findAncestorWidgetOfExactType<MPScaffold>()
+                  ?.onRefresh
+                  ?.call();
+              MPChannel.postMessage(json.encode({
+                'type': 'scroll_view',
+                'message': {
+                  'event': 'onRefreshEnd',
+                  'target': message['target'],
+                },
+              }));
+            }
+          }
+        }
+      } else if (message['event'] == 'onScrollToLower') {
+        final element = MPCore.findTargetHashCode(message['target']);
+        if (element != null) {
+          if (message['isRoot'] == true) {
+            element
+                .findAncestorWidgetOfExactType<MPScaffold>()
+                ?.onReachBottom
+                ?.call();
+          } else {
+            element
+                .findAncestorWidgetOfExactType<MPReachBottomListener>()
+                ?.onReachBottom
+                ?.call(element.widget.key);
+          }
         }
       }
     } catch (e) {

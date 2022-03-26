@@ -13,6 +13,7 @@
 #import "MPIOSMPPlatformView.h"
 #import "MPIOSDecoratedBox.h"
 #import "MPIOSViewController.h"
+#import "MPIOSComponentFactory.h"
 
 @interface MPIOSComponentView ()
 
@@ -29,16 +30,6 @@
         return;
     }
     _constraints = constraints;
-    [self updateLayout];
-}
-
-- (void)setGestureViewConstraints:(CGPoint)gestureViewConstraints {
-    _gestureViewConstraints = gestureViewConstraints;
-    [self updateLayout];
-}
-
-- (void)setPlatformViewConstraints:(CGPoint)platformViewConstraints {
-    _platformViewConstraints = platformViewConstraints;
     [self updateLayout];
 }
 
@@ -66,24 +57,6 @@
                 }
             }
         }];
-    }
-    if (!CGPointEqualToPoint(self.gestureViewConstraints, CGPointZero) &&
-        [self.superview isKindOfClass:[MPIOSGestureDetector class]]) {
-        if (x != nil) {
-            x = @(x.floatValue - self.gestureViewConstraints.x);
-        }
-        if (y != nil) {
-            y = @(y.floatValue - self.gestureViewConstraints.y);
-        }
-    }
-    if (!CGPointEqualToPoint(self.platformViewConstraints, CGPointZero) &&
-        [self.superview isKindOfClass:[MPIOSMPPlatformView class]]) {
-        if (x != nil) {
-            x = @(x.floatValue - self.platformViewConstraints.x);
-        }
-        if (y != nil) {
-            y = @(y.floatValue - self.platformViewConstraints.y);
-        }
     }
     if (!CGPointEqualToPoint(self.borderOffsetConstraints, CGPointZero) &&
         [self.superview isKindOfClass:[MPIOSDecoratedBox class]]) {

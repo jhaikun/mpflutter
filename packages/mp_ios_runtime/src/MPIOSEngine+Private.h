@@ -11,11 +11,10 @@
 
 #import "MPIOSEngine.h"
 
-@class JSContext, MPIOSApp, MPIOSComponentFactory, MPIOSDrawableStorage, MPIOSRouter, MPIOSDebugger, MPIOSMpkReader;
+@class JSContext, MPIOSApp, MPIOSComponentFactory, MPIOSDrawableStorage, MPIOSRouter, MPIOSDebugger, MPIOSMpkReader, MPIOSPlatformChannelIO;
 
 @interface MPIOSEngine (Private)
 
-@property (nonatomic, readonly) MPIOSApp *app;
 @property (nonatomic, readonly) BOOL started;
 @property (nonatomic, readonly) JSContext *jsContext;
 @property (nonatomic, strong) NSMutableDictionary<NSNumber *, id<MPIOSDataReceiver>> *managedViews;
@@ -24,6 +23,7 @@
 @property (nonatomic, readonly) MPIOSRouter *router;
 @property (nonatomic, readonly) MPIOSDebugger *debugger;
 @property (nonatomic, readonly) MPIOSMpkReader *mpkReader;
+@property (nonatomic, readonly) MPIOSPlatformChannelIO *platformChannelIO;
 
 - (void)clear;
 - (void)didReceivedMessage:(NSString *)message;

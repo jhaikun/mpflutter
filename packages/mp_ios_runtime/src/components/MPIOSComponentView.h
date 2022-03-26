@@ -7,13 +7,11 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "MPIOSComponentFactory.h"
 #import "MPIOSEngine.h"
-#import "MPIOSEngine+Private.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class MPIOSAncestorView, MPIOSViewController;
+@class MPIOSAncestorView, MPIOSViewController, MPIOSComponentView, MPIOSComponentFactory;
 
 @protocol MPIOSComponentViewDelegate <NSObject>
 
@@ -31,8 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak) MPIOSEngine *engine;
 @property (nonatomic, strong) NSNumber *hashCode;
 @property (nonatomic, readonly) NSMutableArray<MPIOSAncestorView *> *ownAncestors;
-@property (nonatomic, assign) CGPoint gestureViewConstraints;
-@property (nonatomic, assign) CGPoint platformViewConstraints;
 @property (nonatomic, assign) CGPoint borderOffsetConstraints;
 
 - (void)setConstraints:(NSDictionary *)constraints;

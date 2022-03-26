@@ -9,6 +9,7 @@
 #import <JavaScriptCore/JavaScriptCore.h>
 #import "MPIOSEngine.h"
 #import "MPIOSEngine+Private.h"
+#import "MPIOSProvider.h"
 #import "MPIOSConsole.h"
 #import "MPIOSTimer.h"
 #import "MPIOSDeviceInfo.h"
@@ -21,11 +22,14 @@
 #import "MPIOSCustomPaint.h"
 #import "MPIOSRouter.h"
 #import "MPIOSMPJS.h"
-#import "MPIOSApp.h"
 #import "MPIOSTextMeasurer.h"
 #import "MPIOSMpkReader.h"
 #import "MPIOSWindowInfo.h"
 #import "MPIOSMPPlatformView.h"
+#import "MPIOSListView.h"
+#import "MPIOSGridView.h"
+#import "MPIOSCustomScrollView.h"
+#import "MPIOSPlatformChannelIO.h"
 
 @interface MPIOSEngine ()
 
@@ -42,6 +46,7 @@
 @property (nonatomic, strong) MPIOSMPJS *mpJS;
 @property (nonatomic, strong) MPIOSTextMeasurer *textMeasurer;
 @property (nonatomic, strong) MPIOSWindowInfo *windowInfo;
+@property (nonatomic, strong) MPIOSPlatformChannelIO *platformChannelIO;
 
 @end
 
@@ -96,6 +101,8 @@
     _textMeasurer.engine = self;
     _windowInfo = [[MPIOSWindowInfo alloc] init];
     _windowInfo.engine = self;
+    _provider = [[MPIOSProvider alloc] init];
+    _platformChannelIO = [[MPIOSPlatformChannelIO alloc] initWithEngine:self];
 }
 
 - (void)start {
@@ -116,8 +123,8 @@
     [MPIOSTimer setupWithJSContext:self.jsContext];
     [MPIOSDeviceInfo setupWithJSContext:self.jsContext size:[UIScreen mainScreen].bounds.size];
     [MPIOSWXCompat setupWithJSContext:self.jsContext];
-    [MPIOSNetworkHttp setupWithJSContext:self.jsContext];
-    [MPIOSStorage setupWithJSContext:self.jsContext];
+    [MPIOSNetworkHttp setupWithJSContext:self.jsContext engine:self];
+    [MPIOSStorage setupWithJSContext:self.jsContext engine:self];
     self.jsContext[@"self"] = self.jsContext.globalObject;
     self.mpJS = [[MPIOSMPJS alloc] initWithEngine:self];
     if (self.jsCode != nil) {
@@ -222,6 +229,12 @@
     } else if ([decodedMessage[@"type"] isKindOfClass:[NSString class]] &&
                [decodedMessage[@"type"] isEqualToString:@"platform_view"]) {
         [MPIOSMPPlatformView didReceivedPlatformViewMessage:decodedMessage[@"message"] engine:self];
+    } else if ([decodedMessage[@"type"] isKindOfClass:[NSString class]] &&
+               [decodedMessage[@"type"] isEqualToString:@"platform_channel"]) {
+        [self.platformChannelIO didReceivedMessage:decodedMessage[@"message"]];
+    } else if ([decodedMessage[@"type"] isKindOfClass:[NSString class]] &&
+               [decodedMessage[@"type"] isEqualToString:@"scroll_view"]) {
+        [self didReceivedScrollView:decodedMessage[@"message"]];
     }
 }
 
@@ -257,9 +270,32 @@
     }
     [data enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         if ([obj isKindOfClass:[NSNumber class]]) {
+            [[self.componentFactory cachedView] removeObjectForKey:obj];
             [[self.componentFactory cachedElement] removeObjectForKey:obj];
         }
     }];
+}
+
+- (void)didReceivedScrollView:(NSDictionary *)message {
+    if (![message isKindOfClass:[NSDictionary class]]) {
+        return;
+    }
+    NSString *event = message[@"event"];
+    if (event != nil && [@"onRefreshEnd" isEqualToString:event]) {
+        NSNumber *target = message[@"target"];
+        if (target != nil) {
+            MPIOSComponentView *targetView = self.componentFactory.cachedView[target];
+            if ([targetView isKindOfClass:[MPIOSListView class]]) {
+                [(MPIOSListView *)targetView endRefresh];
+            }
+            else if ([targetView isKindOfClass:[MPIOSGridView class]]) {
+                [(MPIOSGridView *)targetView endRefresh];
+            }
+            else if ([targetView isKindOfClass:[MPIOSCustomScrollView class]]) {
+                [(MPIOSCustomScrollView *)targetView endRefresh];
+            }
+        }
+    }
 }
 
 - (void)sendMessage:(NSDictionary *)message {

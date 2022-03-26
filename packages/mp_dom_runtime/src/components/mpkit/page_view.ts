@@ -147,14 +147,10 @@ class PageViewWeapp extends MPPlatformView {
 }
 
 export const MPPageView = (() => {
-  if (__MP_TARGET_WEAPP__ || __MP_TARGET_SWANAPP__) {
-    if (__MP_TARGET_WEAPP__ || __MP_TARGET_SWANAPP__) {
-      return PageViewWeapp;
-    }
+  if (__MP_MINI_PROGRAM__) {
+    return PageViewWeapp;
   } else if (__MP_TARGET_BROWSER__) {
-    if (__MP_TARGET_BROWSER__) {
-      return PageViewWeb;
-    }
+    return PageViewWeb;
   }
   throw "None of PageView class.";
 })();

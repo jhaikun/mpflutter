@@ -7,6 +7,7 @@
 //
 
 #import "MPIOSMPPageView.h"
+#import "MPIOSComponentFactory.h"
 
 @interface MPIOSMPPageView ()<UIPageViewControllerDelegate, UIPageViewControllerDataSource>
 
@@ -153,7 +154,7 @@
 }
 
 - (void)onMethodCall:(NSString *)method
-              params:(id)params
+              params:(NSDictionary *)params
       resultCallback:(MPIOSPlatformViewCallback)resultCallback {
     if ([@"animateToPage" isEqualToString:method] && [params isKindOfClass:[NSDictionary class]]) {
         NSNumber *page = params[@"page"];

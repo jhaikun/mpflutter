@@ -9,6 +9,7 @@
 #import "MPIOSCustomPaint.h"
 #import "MPIOSComponentUtils.h"
 #import "MPIOSEngine.h"
+#import "MPIOSComponentFactory.h"
 
 @interface MPIOSDrawableStorage ()
 
@@ -40,6 +41,9 @@
     }
     else if ([type isEqualToString:@"memoryImage"]) {
         [self decodeMemoryImage:params];
+    }
+    else if ([type isEqualToString:@"dispose"]) {
+        [self dispose:params];
     }
 }
 
@@ -99,6 +103,14 @@
                           height:@(image.size.height)];
         });
     });
+}
+
+- (void)dispose:(NSDictionary *)params {
+    NSNumber *target = params[@"target"];
+    if (![target isKindOfClass:[NSNumber class]]) {
+        return;
+    }
+    [self.decodedDrawables removeObjectForKey:target];
 }
 
 - (void)onDecodeResult:(NSNumber *)target width:(NSNumber *)width height:(NSNumber *)height {
