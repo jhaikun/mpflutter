@@ -1026,4 +1026,15 @@ class _SwitchPainter extends ToggleablePainter {
     _cachedThumbErrorListener = null;
     super.dispose();
   }
+
+  @override
+  int asyncPaintSequenceId = 0;
+
+  @override
+  bool isAsyncPainter() {
+    return false;
+  }
+
+  @override
+  Future paintAsync(Canvas canvas, Size size) async {}
 }

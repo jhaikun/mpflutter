@@ -669,4 +669,15 @@ class _CheckboxPainter extends ToggleablePainter {
       }
     }
   }
+
+  @override
+  int asyncPaintSequenceId = 0;
+
+  @override
+  bool isAsyncPainter() {
+    return false;
+  }
+
+  @override
+  Future paintAsync(Canvas canvas, Size size) async {}
 }

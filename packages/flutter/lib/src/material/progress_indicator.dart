@@ -138,7 +138,7 @@ abstract class ProgressIndicator extends StatefulWidget {
 }
 
 class _LinearProgressIndicatorPainter extends CustomPainter {
-  const _LinearProgressIndicatorPainter({
+  _LinearProgressIndicatorPainter({
     required this.backgroundColor,
     required this.valueColor,
     this.value,

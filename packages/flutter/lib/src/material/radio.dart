@@ -514,4 +514,15 @@ class _RadioPainter extends ToggleablePainter {
       canvas.drawCircle(center, _kInnerRadius * position.value, paint);
     }
   }
+
+  @override
+  int asyncPaintSequenceId = 0;
+
+  @override
+  bool isAsyncPainter() {
+    return false;
+  }
+
+  @override
+  Future paintAsync(Canvas canvas, Size size) async {}
 }

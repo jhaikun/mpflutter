@@ -307,7 +307,7 @@ class MPElement {
     Transform: _encodeTransform,
     IgnorePointer: _encodeIgnorePointer,
     AbsorbPointer: _encodeAbsorbPointer,
-    Icon: _encodeIcon,
+    // Icon: _encodeIcon,
     CustomScrollView: _encodeCustomScrollView,
     SliverList: _encodeSliverList,
     SliverGrid: _encodeSliverGrid,
