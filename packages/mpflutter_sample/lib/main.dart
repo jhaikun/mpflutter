@@ -24,6 +24,7 @@ import 'package:mpflutter_template/layouts/stack_page.dart';
 import 'package:mpflutter_template/layouts/transform_page.dart';
 import 'package:mpflutter_template/layouts/wrap_page.dart';
 import 'package:mpflutter_template/list/custom_scroll_view_page.dart';
+import 'package:mpflutter_template/list/double_column_list_view_page.dart';
 import 'package:mpflutter_template/list/grid_view_page.dart';
 import 'package:mpflutter_template/list/grid_view_waterfall_page.dart';
 import 'package:mpflutter_template/list/list_view_loadmore_page.dart';
@@ -136,6 +137,7 @@ class MyApp extends StatelessWidget {
         '/gridView': (context) => GridViewPage(),
         '/gridViewWaterfall': (context) => GridViewWaterfallPage(),
         '/listView': (context) => ListViewPage(),
+        '/doubleColumnListView': (context) => DoubleColumnListViewPage(),
         '/listViewLoadMore': (context) => ListViewLoadmorePage(),
         '/pageView': (context) => PageViewPage(),
         '/icon': (context) => IconPage(),
