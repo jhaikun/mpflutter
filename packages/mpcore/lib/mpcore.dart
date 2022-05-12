@@ -214,6 +214,7 @@ class MPCore {
         // ignore: empty_catches
       } catch (e) {}
     }
+    var stateChanged = false;
     var recentDirtyElements = BuildOwner.recentDirtyElements
         .where((element) {
           return element.isInactive() != true &&
@@ -223,6 +224,11 @@ class MPCore {
           Element? currentE = e;
           while (currentE != null &&
               (currentE is StatefulElement || currentE is StatelessElement)) {
+            if (currentE is StatefulElement &&
+                currentE.state is MPScaffoldState) {
+              stateChanged = true;
+              break;
+            }
             currentE = findFirstChild(currentE);
           }
           return currentE;
@@ -230,7 +236,9 @@ class MPCore {
         .whereType<Element>()
         .toList();
     _Document? diffDoc;
-    if (recentDirtyElements.isNotEmpty && recentDirtyElements.length < 10) {
+    if (!stateChanged &&
+        recentDirtyElements.isNotEmpty &&
+        recentDirtyElements.length < 10) {
       recentDirtyElements = recentDirtyElements
           .map((e) => _findDiffableElement(e))
           .where((element) => element != null)
