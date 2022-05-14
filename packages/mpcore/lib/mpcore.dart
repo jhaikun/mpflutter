@@ -92,6 +92,7 @@ class MPCore {
   void connectToHostChannel() async {
     setupMaterialAdapter();
     if (kReleaseMode) {
+      injectImageSizeLoader();
       injectErrorWidget();
       injectMethodChannelHandler();
       final _ = MPChannel.setupHotReload(this);
@@ -114,6 +115,7 @@ class MPCore {
       }
     } else {
       await runZonedGuarded(() async {
+        injectImageSizeLoader();
         injectErrorWidget();
         injectMethodChannelHandler();
         final _ = MPChannel.setupHotReload(this);
@@ -138,6 +140,34 @@ class MPCore {
         print('Unccaught exception: $error, $stackTrace.');
       });
     }
+  }
+
+  void injectImageSizeLoader() {
+    Image.imageSizeLoader = (imageProvider) async {
+      MPDrawable? drawable;
+      try {
+        if (imageProvider is NetworkImage) {
+          drawable = await MPDrawable.fromNetworkImage(imageProvider.url);
+          return Size(drawable.width.toDouble(), drawable.height.toDouble());
+        } else if (imageProvider is MemoryImage) {
+          drawable = await MPDrawable.fromMemoryImage(imageProvider.bytes,
+              imageType: imageProvider.imageType ?? 'png');
+          return Size(drawable.width.toDouble(), drawable.height.toDouble());
+        } else if (imageProvider is AssetImage) {
+          drawable = await MPDrawable.fromAssetImage(
+            imageProvider.assetName,
+            assetPkg: imageProvider.package,
+          );
+          return Size(drawable.width.toDouble(), drawable.height.toDouble());
+        } else {
+          throw 'no match loader';
+        }
+      } catch (e) {
+        rethrow;
+      } finally {
+        drawable?.dispose();
+      }
+    };
   }
 
   void injectErrorWidget() {
