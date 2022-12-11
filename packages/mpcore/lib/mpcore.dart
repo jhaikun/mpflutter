@@ -675,3 +675,7 @@ class MPCore {
     });
   }
 }
+
+class MPJS {
+  static final evalTemplate = mpjs.evalTemplate;
+}
